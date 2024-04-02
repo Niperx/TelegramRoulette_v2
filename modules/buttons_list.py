@@ -9,8 +9,8 @@ def get_menu_kb() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.row(
         KeyboardButton(text='🟥 Red'),
-        KeyboardButton(text='⬛️ Green'),
-        KeyboardButton(text='🟩 Black')
+        KeyboardButton(text='🟩 Green'),
+        KeyboardButton(text='⬛️ Black')
     )
     builder.row(
         KeyboardButton(text='💲 Daily'),
@@ -18,7 +18,7 @@ def get_menu_kb() -> ReplyKeyboardMarkup:
     )
 
     builder.row(
-        KeyboardButton(text='📊 Stats'),
+        KeyboardButton(text='📊 Stats (🛠)'),
         KeyboardButton(text='📈 Leaders')
     )
 

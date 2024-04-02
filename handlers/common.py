@@ -58,7 +58,8 @@ async def cmd_start(message: types.Message):
                 balance += 50000
                 if message.from_user.username is not None:
                     await bot.send_message(chat_id=code,
-                                           text=f'У вас новый реферал {message.from_user.first_name} - @{message.from_user.username})')
+                                           text=f'У вас новый реферал {message.from_user.first_name}'
+                                                f' - @{message.from_user.username})')
                 else:
                     await bot.send_message(chat_id=code,
                                            text=f'У вас новый реферал {message.from_user.first_name}')
@@ -83,9 +84,31 @@ async def cmd_check_balance(message: types.Message):
 async def cmd_check_balance(message: types.Message):
     print(get_info_about_user_message(message))
     user_id = message.from_user.id
-    balance = await get_balance(user_id)
-    text = f'{balance}'
-    await message.answer(text, reply_markup=get_menu_kb())
+
+    lead_text = "⭐️ ТОП-10 богатейших людей этого чёртово казино! ⭐️️ \n\n"
+    tops_db = await get_leaders(10)
+
+    i = 0
+    for top in tops_db:
+        i += 1
+        smile = ''
+        if i <= 3:
+            match i:
+                case 1:
+                    smile = '🥇 '
+                case 2:
+                    smile = '🥈 '
+                case 3:
+                    smile = '🥉 '
+        else:
+            smile = '🎗 '
+        you_mark = ''
+        if message.from_user.username == top[0]:
+            you_mark = '(You)'
+
+        lead_text += f'{smile} {i}. @{top[0]} - {top[1]} коинов. {smile} {you_mark}\n'
+
+    await message.answer(lead_text, reply_markup=get_menu_kb())
 
 
 #

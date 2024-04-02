@@ -45,7 +45,15 @@ async def create_user(user_id, username=None, balance=0, ref_id=None):  # соз
 
     user_info = (new_id, user_id, username, balance, datetime.now(), ref_id, datetime.now())
     cur.execute("INSERT INTO users VALUES(?,?,?,?,?,?,?);", user_info)
+
+    if not ref_id:
+        cur.execute(f'SELECT balance FROM users WHERE user_id = {ref_id}')
+        old_balance = cur.fetchall()[0][0]
+        new_balance = old_balance + 30000
+        cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref_id}')
+
     con.commit()
+    con.close()
 
 
 async def check_user_id(user_id):
@@ -81,20 +89,49 @@ async def add_money(user_id, money):
     cur = con.cursor()
 
     # Пополнение у пользователя
-    cur.execute(f'SELECT wallet FROM users WHERE id = {user_id}')
+    cur.execute(f'SELECT balance FROM users WHERE user_id = {user_id}')
     old_balance = cur.fetchall()[0][0]
     new_balance = old_balance + money
-    cur.execute(F'UPDATE users SET wallet = {new_balance} WHERE id = {user_id}')
+    cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {user_id}')
 
     # Пополнение у реферала
-    cur.execute(f'SELECT ref_id FROM users WHERE id = {user_id}')
+    cur.execute(f'SELECT ref_id FROM users WHERE user_id = {user_id}')
 
     ref = cur.fetchall()[0][0]
 
     if ref:
-        cur.execute(f'SELECT wallet FROM users WHERE id = {ref}')
+        cur.execute(f'SELECT balance FROM users WHERE user_id = {ref}')
         old_balance = cur.fetchall()[0][0]
         new_balance = old_balance + money * 0.05
-        cur.execute(F'UPDATE users SET wallet = {new_balance} WHERE id = {ref}')
+        cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref}')
 
     con.commit()
+    con.close()
+
+
+async def get_leaders(num):
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+
+    cur.execute(f'SELECT username, balance FROM users ORDER BY balance DESC LIMIT {num};')
+    tops_db = cur.fetchall()
+
+    return tops_db
+    #
+    # tops = []
+    #
+    # i = 0
+    # for top in tops_db:
+    #     i += 1
+    #     text = ''
+    #     if i <= 3:
+    #         match i:
+    #             case 1:
+    #                 text += '🥇 '
+    #             case 2:
+    #                 text += '🥈 '
+    #             case 3:
+    #                 text += '🥉 '
+    #     else:
+    #         text += '🎗 '
+
