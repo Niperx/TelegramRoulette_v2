@@ -4,7 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, Router
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from handlers import common
+from handlers import common, play
 from db.db_manage import check_db
 
 bot = Bot(token=config.TOKEN)
@@ -25,7 +25,8 @@ async def main():
     logger.info("Starting bot")
 
     dp.include_routers(
-        common.router
+        common.router,
+        play.router
     )
 
     await bot.delete_webhook(drop_pending_updates=True)

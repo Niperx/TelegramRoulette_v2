@@ -3,6 +3,7 @@ from db.db_manage import *
 from config import TOKEN
 from datetime import datetime
 from aiogram import Bot, types, Router, F
+from aiogram.filters import or_f
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -14,7 +15,6 @@ router = Router()
 
 
 class RegComp(StatesGroup):
-    first_bet = State(),
     betting = State()
 
 
@@ -43,3 +43,10 @@ def get_info_about_user_callback(callback):  # Инфа о коллбеке в �
         text += 'Нет имени'
     return text
 
+
+@router.message(F.text == '🟥 Red')
+@router.message(F.text == '🟩 Green')
+@router.message(F.text == '⬛️ Black')
+async def cmd_check_balance(message: types.Message):
+    print(get_info_about_user_message(message))
+    await message.answer(f'{message.text}')
