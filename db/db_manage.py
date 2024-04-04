@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime
 
 
 async def check_db():  # Проверка на ДБ, при отсутствии - создание
@@ -117,21 +117,30 @@ async def get_leaders(num):
     tops_db = cur.fetchall()
 
     return tops_db
-    #
-    # tops = []
-    #
-    # i = 0
-    # for top in tops_db:
-    #     i += 1
-    #     text = ''
-    #     if i <= 3:
-    #         match i:
-    #             case 1:
-    #                 text += '🥇 '
-    #             case 2:
-    #                 text += '🥈 '
-    #             case 3:
-    #                 text += '🥉 '
-    #     else:
-    #         text += '🎗 '
 
+
+async def check_money_time(user_id):
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+
+    date_format_str = '%Y-%m-%d %H:%M:%S.%f'
+
+    cur.execute(f'SELECT money_time FROM users WHERE user_id = {user_id}')
+    db_time = cur.fetchall()[0][0]
+    start = datetime.strptime(db_time, date_format_str)
+    now = datetime.now()
+    diff = now - start
+
+    return diff.total_seconds()
+
+
+async def update_money_time(user_id):
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+
+    print(datetime.now(), user_id)
+
+    cur.execute(f'UPDATE users SET money_time = ? WHERE user_id = ?',
+                (datetime.now(), user_id))
+    con.commit()
+    con.close()

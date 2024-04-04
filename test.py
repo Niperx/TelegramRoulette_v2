@@ -27,7 +27,6 @@ import asyncio
 
 from db.db_manage import *
 
-tops = get_leaders(10)
+tops = check_money_time(190112213)
 
-for top in tops:
-    print(top[0])
+print(tops // 3600)

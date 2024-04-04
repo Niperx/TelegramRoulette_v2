@@ -1,6 +1,4 @@
 import logging
-import sqlite3
-import asyncio
 from db.db_manage import *
 from config import TOKEN
 from datetime import datetime
@@ -76,16 +74,16 @@ async def cmd_check_balance(message: types.Message):
     print(get_info_about_user_message(message))
     user_id = message.from_user.id
     balance = await get_balance(user_id)
-    text = f'{balance}'
-    await message.answer(text, reply_markup=get_menu_kb())
+    text = (f'<b>Ваш баланс:</b>\n'
+            f'🪙 {balance} 🪙')
+    await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
 
 
 @router.message(F.text == '📈 Leaders')
 async def cmd_check_balance(message: types.Message):
     print(get_info_about_user_message(message))
-    user_id = message.from_user.id
 
-    lead_text = "⭐️ ТОП-10 богатейших людей этого чёртово казино! ⭐️️ \n\n"
+    lead_text = "⭐️ <b>ТОП-10 богатейших людей этого чёртово казино!</b> ⭐️️ \n\n"
     tops_db = await get_leaders(10)
 
     i = 0
@@ -108,114 +106,26 @@ async def cmd_check_balance(message: types.Message):
 
         lead_text += f'{smile} {i}. @{top[0]} - {top[1]} коинов. {smile} {you_mark}\n'
 
-    await message.answer(lead_text, reply_markup=get_menu_kb())
+    await message.answer(lead_text, reply_markup=get_menu_kb(), parse_mode='HTML')
 
 
-#
-#
-# @router.message(F.text == '📺 Видео инсрукция подключения')
-# async def cmd_raffle_info(message: types.Message):
-#     print(get_info_about_user_message(message))
-#     text = 'https://youtu.be/SWxzCXslK8k'
-#     await message.answer(text, reply_markup=get_menu_kb())
-#
-#
-# @router.message(F.text == '🎁 Призы')
-# async def cmd_raffle_info(message: types.Message):
-#     print(get_info_about_user_message(message))
-#     text = 'У нас 3 призовых места каждый день:\n' \
-#            '🥇 1 место - приз 30$\n' \
-#            '🥈 2 место - приз 20$\n' \
-#            '🥉 3 место - приз 10$\n'
-#     await message.answer(text, reply_markup=get_menu_kb())
-#
-#
-# @router.message(Command(commands=["cancel"]))
-# @router.message(F.text.lower() == "отмена")
-# async def cmd_cancel(message: types.Message, state: FSMContext):
-#     await state.clear()
-#     await message.answer(
-#         text="Действие отменено",
-#         reply_markup=get_menu_kb()
-#     )
+@router.message(F.text == '💲 Daily')
+async def cmd_check_balance(message: types.Message):
+    print(get_info_about_user_message(message))
+    user_id = message.from_user.id
 
+    time_left = await check_money_time(user_id)
+    print(f'Часы: {24 - time_left // 3600}, Минуты: {60 - time_left % 3600}')
+    print(time_left // 3600)
+    if time_left // 3600 <= 23:
+        end = 3600 * 24 - time_left
+        end_h = int(end // 3600)
+        end_m = int(end % 3600 / 60)
+        text = f'🪙 До бесплатных монеток осталось: 🪙 \n<b>{end_h}ч. {end_m}м.</b>'
+    else:
+        await add_money(user_id, 10000)
+        await update_money_time(user_id)
+        text = (f'🪙 Вам начислено 10000 монеток 🪙\n'
+                f'Приходите за новой порцией через <b>24ч.</b>')
 
-
-
-# @router.message(F.text == '💵 ЖМИ Участвовать')
-# async def cmd_reg(message: types.Message, state: FSMContext):
-#     print(get_info_about_user_message(message))
-#     x = await check_user_id(message.from_user.id)
-#     if x:
-#         await message.answer('Ты уже в списках, дружочек', reply_markup=get_menu_kb())
-#     else:
-#         # тут переход в другое состояние
-#         # await create_user(message.from_user.id, '1111', message.from_user.username,
-#         #                   f'https://t.me/id{message.from_user.id}')
-#
-#         await message.answer('Введите ваш UID на BingX (цифры)', reply_markup=get_cancel_kb())
-#         await state.set_state(RegComp.giving_uid)
-
-
-# @router.message(RegComp.giving_uid,
-#                 F.text)
-# async def cmd_give_uid(message: types.Message, state: FSMContext):
-#     print(get_info_about_user_message(message))
-#     try:
-#         uid = int(message.text.lower())
-#         chk = await check_uid(uid)
-#         if chk:
-#             await message.answer(
-#                 text='Такой UID уже присутствует в базе, попробуйте ещё раз',
-#                 reply_markup=get_cancel_kb())
-#         else:
-#             await state.update_data(uid=message.text.lower())
-#             await message.answer(
-#                 text='Включите копирование "DEPOSIT BOOSTER # 1" и пришлите СКРИНШОТ\n\n'
-#                      'Видео инструкция как это сделать - https://youtu.be/SWxzCXslK8k',
-#                 reply_markup=get_cancel_kb())
-#             await state.set_state(RegComp.giving_photo)
-#     except:
-#         await message.answer('Неверный UID', reply_markup=get_menu_kb())
-#         await state.clear()
-#
-#
-# @router.message(RegComp.giving_photo,
-#                 F.photo)
-# async def cmd_give_photo(message: types.Message, state: FSMContext):
-#     print(get_info_about_user_message(message))
-#     await message.forward(503516164)
-#     user_data = await state.get_data()
-#     if message.from_user.username:
-#         await bot.send_message(503516164,
-#                                f'ID: #^{message.from_user.id}^#\n#*<a href="https://t.me/{message.from_user.username}">{message.from_user.username}</a>*#\nUID: ^^{user_data["uid"]}^^',
-#                                parse_mode='HTML', reply_markup=get_aprove_kb())
-#         await message.answer('Отправили на модерацию вашу заявку на участие, ожидайте...', reply_markup=get_menu_kb())
-#
-#     else:
-#         await message.answer('Упс! У вас отсутствует никнейм в телеграме, укажите его в настройках профиля и попробуйте ещё раз')
-#     await state.clear()
-#
-#
-# @router.callback_query(F.data.startswith('aprove_'))
-# async def callbacks_aprove(callback: types.CallbackQuery):
-#     action = callback.data.split('_')[-1]
-#     print(action)
-#     text = callback.message.text
-#     user_id = text[text.find('#^') + 2:text.find('^#')]
-#     user_link = text[text.find('#*') + 2:text.find('*#')]
-#     user_uid = text[text.find('^^') + 2:text.rfind('^^')]
-#     if action == 'yes':
-#         print(user_id, user_link, user_uid)
-#         await create_user(user_id, user_uid, link=f'https://t.me/{user_link}')
-#         num = await get_number(user_id)
-#         await bot.send_message(int(user_id), f'Вы зарегистрированы на участие в конкурсе под номером {num}\n\n'
-#                                              '▪️ Канал бота - https://t.me/+-pCJY2_O-Js3OTUy\n\n'
-#                                              '▪️ Чат бота - https://t.me/+WndscOY7L9I5NDdi')
-#     elif action == 'no':
-#         await bot.send_message(int(user_id), 'Заявка отклонена')
-#     text = f'ID: {user_id}\n' \
-#            f'Username: @{user_link}\n' \
-#            f'UID: {user_uid}'
-#     await callback.message.edit_text(text, parse_mode='HTML')
-
+    await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
