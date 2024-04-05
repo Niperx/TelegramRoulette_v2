@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    await check_db()  # Проверка на существование ДБ
+    # await check_db()  # Проверка на существование ДБ
 
     logging.basicConfig(
         level=logging.INFO,
