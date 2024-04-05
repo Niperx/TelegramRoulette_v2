@@ -47,6 +47,44 @@ def get_info_about_user_callback(callback):  # Инфа о коллбеке в �
 @router.message(F.text == '🟥 Red')
 @router.message(F.text == '🟩 Green')
 @router.message(F.text == '⬛️ Black')
-async def cmd_check_balance(message: types.Message):
+async def cmd_check_balance(message: types.Message, state: FSMContext):
     print(get_info_about_user_message(message))
-    await message.answer(f'{message.text}')
+    await state.update_data(color=message.text)
+    data = await state.get_data()
+    try:  # Сделать проверку, без try
+        last = data['last']
+    except:
+        last = 1000
+        await state.update_data(last=last)
+
+    await message.answer(f'Ставка на Цвет: {message.text}\n'
+                         f'<i>(Сумма в центре клавиатуры)</i>', reply_markup=get_bet_kb(last), parse_mode='HTML')
+
+
+@router.callback_query(F.data.startswith('bet_'))
+async def process_edit_bet(callback: types.CallbackQuery, state: FSMContext):
+    print(get_info_about_user_callback(callback))
+    print(callback.data)
+    balance = await get_balance(callback.from_user.id)
+    data = await state.get_data()
+    last_raw = data['last']
+    last = data['last']
+    match callback.data:
+        case 'bet_min_10': last -= 10
+        case 'bet_min_100': last -= 100
+        case 'bet_plus_10': last += 10
+        case 'bet_plus_100': last += 100
+        case 'bet_div': last /= 2
+        case 'bet_double': last *= 2
+        case 'bet_standard': last = balance / 10
+        case 'bet_allin': last = balance
+
+    if last <= 0:
+        last = 10
+    elif last > balance:
+        last = balance
+
+    last = int(last)
+    await state.update_data(last=last)
+    await callback.message.edit_text(f'Ставка на Цвет: {data['color']}\n'
+                                     f'<i>(Сумма в центре клавиатуры)</i>', reply_markup=get_bet_kb(last), parse_mode='HTML')

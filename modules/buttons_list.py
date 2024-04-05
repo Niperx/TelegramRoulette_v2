@@ -22,7 +22,7 @@ def get_menu_kb() -> ReplyKeyboardMarkup:
         KeyboardButton(text='📈 Leaders')
     )
 
-    return builder.as_markup(resize_keyboard=True)
+    return builder.as_markup(resize_keyboard=True, input_field_placeholder="Что делаем?")
 
 
 def get_cancel_kb() -> ReplyKeyboardMarkup:
@@ -33,3 +33,31 @@ def get_cancel_kb() -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True, input_field_placeholder="Что делаем?")
 
 
+def get_bet_kb(last=None):
+    if last is None:
+        last = 100
+    buttons = [
+        [
+            InlineKeyboardButton(text='-10', callback_data='bet_min_10'),
+
+            InlineKeyboardButton(text='Default', callback_data='bet_standard'),
+            InlineKeyboardButton(text='+10', callback_data='bet_plus_10')
+        ],
+        [
+            InlineKeyboardButton(text='/2', callback_data='bet_div'),
+            InlineKeyboardButton(text=f'{last}', callback_data='bet_now'),
+            InlineKeyboardButton(text='x2', callback_data='bet_double')
+        ],
+        [
+            InlineKeyboardButton(text='-100', callback_data='bet_min_100'),
+            InlineKeyboardButton(text='All In', callback_data='bet_allin'),
+            InlineKeyboardButton(text='+100', callback_data='bet_plus_100')
+        ],
+        [
+            InlineKeyboardButton(text='❌', callback_data='bet_no'),
+            InlineKeyboardButton(text='✅', callback_data='bet_yes')
+        ],
+    ]
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
