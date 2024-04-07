@@ -84,6 +84,14 @@ async def get_balance(user_id):
     return result
 
 
+async def get_username(user_id):
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+    cur.execute("SELECT username FROM users WHERE user_id = ?", (user_id,))
+    result = cur.fetchone()[0]
+    return result
+
+
 async def add_money(user_id, money):
     con = sqlite3.connect('db/main.db')
     cur = con.cursor()

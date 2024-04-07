@@ -74,8 +74,8 @@ async def cmd_check_balance(message: types.Message):
     print(get_info_about_user_message(message))
     user_id = message.from_user.id
     balance = await get_balance(user_id)
-    text = (f'<b>Ваш баланс:</b>\n'
-            f'🪙 {balance} 🪙')
+    text = (f'🪙 <b>Ваш баланс:</b> 🪙\n'
+            f'{balance}')
     await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
 
 
