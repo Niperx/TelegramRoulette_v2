@@ -81,7 +81,7 @@ async def cmd_choose_color(message: types.Message, state: FSMContext):
         await state.update_data(last=last)
 
     if last <= balance:
-        last = int(balance)
+        last = int(balance) / 10
         await state.update_data(last=last)
 
     if balance > 0:
@@ -150,10 +150,10 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
                 x = 13
             else:
                 x = 2
-            text += f'Вы выиграли {last * x} коинов'
-            log_text = f'Выиграл {last * x} коинов'
+            text += f'Вы выиграли {last * x - last} коинов'
+            log_text = f'Выиграл {last * x - last} коинов'
 
-            await add_money(callback.from_user.id, last * x)
+            await add_money(callback.from_user.id, last * x - last)
             await a.edit_text(text)
             await state.update_data(message=None)
         else:
