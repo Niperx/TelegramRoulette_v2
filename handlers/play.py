@@ -6,7 +6,6 @@ from db.db_manage import *
 from config import TOKEN
 from datetime import datetime
 from aiogram import Bot, types, Router, F
-from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
@@ -20,7 +19,7 @@ class RegComp(StatesGroup):
     betting = State()
 
 
-def get_info_about_user_message(message):  # Инфа о сообщении в консоль
+async def get_info_about_user_message(message):  # Инфа о сообщении в консоль
     text = f'\n##### {datetime.now()} #####\n'
     text += f'ID: {message.from_user.id}, Text: {message.text}, Chat ID: {message.chat.id}'
     try:
@@ -33,7 +32,7 @@ def get_info_about_user_message(message):  # Инфа о сообщении в �
     return text
 
 
-def get_info_about_user_callback(callback):  # Инфа о коллбеке в консоль
+async def get_info_about_user_callback(callback):  # Инфа о коллбеке в консоль
     text = f'\n##### {datetime.now()} #####\n'
     text += f'ID: {callback.from_user.id}, Text: {callback.data}'
     try:
@@ -49,30 +48,42 @@ def get_info_about_user_callback(callback):  # Инфа о коллбеке в �
 @router.message(F.text == '🟥 Red')
 @router.message(F.text == '🟩 Green')
 @router.message(F.text == '⬛️ Black')
-async def cmd_check_balance(message: types.Message, state: FSMContext):
-    print(get_info_about_user_message(message))
+async def cmd_choose_color(message: types.Message, state: FSMContext):
+    print(await get_info_about_user_message(message))
+    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
+
     await state.update_data(color=message.text)
     data = await state.get_data()
-    try:  # Сделать проверку, без try
+    if 'last' in data.keys():
         last = data['last']
-    except:
+    else:
         last = 1000
         await state.update_data(last=last)
 
-    await message.answer(f'Ставка на Цвет: {message.text}\n'
-                         f'<i>(Сумма в центре клавиатуры)</i>', reply_markup=get_bet_kb(last), parse_mode='HTML')
+    a = await message.answer(f'Ставка на Цвет: {message.text}\n'
+                             f'<i>(Сумма в центре клавиатуры, либо напишите её сообщением)</i>',
+                             reply_markup=get_bet_kb(last), parse_mode='HTML')
+    await state.update_data(message=a)
+
+
+@router.callback_query(F.data == 'bet_no')
+async def process_cancel_bet(callback: types.CallbackQuery, state: FSMContext):
+    print(await get_info_about_user_callback(callback))
+    await callback.message.edit_text('❌ <b>Ставка отменена</b> ❌', parse_mode='HTML')
+    await state.update_data(color=None)
 
 
 @router.callback_query(F.data == 'bet_yes')
-@router.callback_query(F.data == 'bet_no')
 async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
-    print(get_info_about_user_callback(callback))
-    print(callback.data)
-    balance = await get_balance(callback.from_user.id)
+    print(await get_info_about_user_callback(callback))
+    await bot.send_chat_action(chat_id=callback.message.chat.id, action='typing')
+
     username = await get_username(callback.from_user.id)
     data = await state.get_data()
     last = data['last']
     color = data['color']
+
+    await callback.message.edit_text(callback.message.text)
 
     roll = random.randint(0, 14)
     roll_pic = "✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️\n⬛️🟥⬛️🟥⬛️🟥🟩🟥⬛️🟥⬛️🟥⬛️🟥⬛️\n"
@@ -87,12 +98,15 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     if roll == 6:
         # green
         bet_color = '🟩 Green 🟩'
+        await change_stats('green')
     elif roll % 2 == 0:
         # black
         bet_color = '⬛️ Black ⬛️'
+        await change_stats('black')
     elif roll % 2 == 1:
         # red
         bet_color = '🟥 Red 🟥'
+        await change_stats('red')
 
     text += f"\nНа барабане следующий цвет:\n{bet_color}️\n\n@{username}, "
 
@@ -110,28 +124,44 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     else:
         text += f'Вы проиграли {last}'
 
-        await add_money(callback.from_user.id, last)
+        await add_money(callback.from_user.id, -last)
         await a.edit_text(text)
 
-    await callback.message.edit_text(callback.message.text)
+    await state.update_data(color=None)
+
+
+@router.callback_query(F.data == 'bet_now')
+async def process_cancel_bet(callback: types.CallbackQuery):
+    print(await get_info_about_user_callback(callback))
 
 
 @router.callback_query(F.data.startswith('bet_'))
 async def process_edit_bet(callback: types.CallbackQuery, state: FSMContext):
-    print(get_info_about_user_callback(callback))
+    print(await get_info_about_user_callback(callback))
     print(callback.data)
+    await bot.send_chat_action(chat_id=callback.message.chat.id, action='typing')
+
     balance = await get_balance(callback.from_user.id)
     data = await state.get_data()
     last = data['last']
+    start_last = last
     match callback.data:
-        case 'bet_min_10': last -= 10
-        case 'bet_min_100': last -= 100
-        case 'bet_plus_10': last += 10
-        case 'bet_plus_100': last += 100
-        case 'bet_div': last /= 2
-        case 'bet_double': last *= 2
-        case 'bet_standard': last = balance / 10
-        case 'bet_allin': last = balance
+        case 'bet_min_10':
+            last -= 10
+        case 'bet_min_100':
+            last -= 100
+        case 'bet_plus_10':
+            last += 10
+        case 'bet_plus_100':
+            last += 100
+        case 'bet_div':
+            last /= 2
+        case 'bet_double':
+            last *= 2
+        case 'bet_standard':
+            last = balance / 10
+        case 'bet_allin':
+            last = balance
 
     if last <= 0:
         last = 10
@@ -139,8 +169,31 @@ async def process_edit_bet(callback: types.CallbackQuery, state: FSMContext):
         last = balance
 
     last = int(last)
-    await state.update_data(last=last)
-    await callback.message.edit_text(f'Ставка на Цвет: {data["color"]}\n'
-                                     f'<i>(Сумма в центре клавиатуры)</i>', reply_markup=get_bet_kb(last), parse_mode='HTML')
+
+    if start_last != last:
+        await state.update_data(last=last)
+        text = f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её сообщением)</i>'
+        a = await callback.message.edit_text(text, reply_markup=get_bet_kb(last), parse_mode='HTML')
+        await state.update_data(message=a)
 
 
+@router.message(F.text)
+async def cmd_choose_color(message: types.Message, state: FSMContext):
+    print(await get_info_about_user_message(message))
+    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
+
+    balance = await get_balance(message.from_user.id)
+    data = await state.get_data()
+
+    if 'color' in data.keys():
+        if data['color'] is not None:
+            if message.text.isdigit():
+                bet = int(message.text)
+                if bet <= balance:
+                    await state.update_data(last=bet)
+                    my_message = data['message']
+                    text = (f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её '
+                            f'сообщением)</i>')
+                    await my_message.edit_text(text, reply_markup=get_bet_kb(bet), parse_mode='HTML')
+
+    await message.delete()

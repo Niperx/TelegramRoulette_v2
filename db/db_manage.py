@@ -25,6 +25,20 @@ async def check_db():  # Проверка на ДБ, при отсутствии
                )
            ''')
         con.commit()
+
+        cur.execute('''
+                CREATE TABLE stats (
+                id    INTEGER PRIMARY KEY,
+                red   INTEGER DEFAULT (0),
+                green INTEGER DEFAULT (0),
+                black INTEGER DEFAULT (0) 
+                )
+            ''')
+        con.commit()
+
+        info = (1, 1, 1, 1)
+        cur.execute("INSERT INTO users VALUES(?,?,?,?);", info)
+
     else:
         print('DB Loaded')
 
@@ -152,3 +166,25 @@ async def update_money_time(user_id):
                 (datetime.now(), user_id))
     con.commit()
     con.close()
+
+
+async def change_stats(color):
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+
+    cur.execute(f'SELECT {color} FROM stats WHERE id = 1')
+    number = cur.fetchall()[0][0]
+    cur.execute(f'UPDATE stats SET {color} = {int(number + 1)} WHERE id = 1')
+
+    con.commit()
+    con.close()
+
+
+async def get_stats():
+    con = sqlite3.connect('db/main.db')
+    cur = con.cursor()
+
+    cur.execute(f'SELECT red, green, black FROM stats WHERE id = 1')
+    number = cur.fetchall()[0]
+
+    return number

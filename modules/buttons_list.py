@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 
 # def get_menu_kb():
@@ -18,7 +18,7 @@ def get_menu_kb() -> ReplyKeyboardMarkup:
     )
 
     builder.row(
-        KeyboardButton(text='📊 Stats (🛠)'),
+        KeyboardButton(text='📊 Stats'),  # (🛠)
         KeyboardButton(text='📈 Leaders')
     )
 
