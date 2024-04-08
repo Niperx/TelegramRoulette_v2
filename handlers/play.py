@@ -54,6 +54,12 @@ async def cmd_choose_color(message: types.Message, state: FSMContext):
 
     await state.update_data(color=message.text)
     data = await state.get_data()
+    print(data)
+    if 'message' in data.keys():
+        if data['message'] is not None:
+            a = data['message']
+            await a.delete()
+
     if 'last' in data.keys():
         last = data['last']
     else:
@@ -112,20 +118,25 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
 
     await asyncio.sleep(1)
 
-    if color in bet_color:
-        if 'Green' in bet_color:
-            x = 13
+    if color:
+        if color in bet_color:
+            if 'Green' in bet_color:
+                x = 13
+            else:
+                x = 2
+            text += f'Вы выиграли {last * x} коинов'
+
+            await add_money(callback.from_user.id, last * x)
+            await a.edit_text(text)
+            await state.update_data(message=None)
         else:
-            x = 2
-        text += f'Вы выиграли {last * x} коинов'
+            text += f'Вы проиграли {last} коинов'
 
-        await add_money(callback.from_user.id, last * x)
-        await a.edit_text(text)
+            await add_money(callback.from_user.id, -last)
+            await a.edit_text(text)
+            await state.update_data(message=None)
     else:
-        text += f'Вы проиграли {last} коинов'
-
-        await add_money(callback.from_user.id, -last)
-        await a.edit_text(text)
+        await a.edit_text('❌ <b>Ставка отменена</b> ❌ \n(Защита от спама)', parse_mode='HTML')
 
     await state.update_data(color=None)
 

@@ -43,6 +43,8 @@ async def cmd_start(message: types.Message, command: CommandObject):
     print(await get_info_about_user_message(message))
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
+    text = 'Добро пожаловать в это  🎰 <b>Чёртово Казино</b> 🎰'
+
     user_id = message.from_user.id
     chk = await check_user_id(user_id)
     if not chk:
@@ -66,8 +68,8 @@ async def cmd_start(message: types.Message, command: CommandObject):
         else:
             code = None
         await create_user(user_id, message.from_user.username, balance, code)
+        text += f'\n<i>(Ваш бонус: {balance} коинов по реферальной системе)</i>'
 
-    text = 'Добро пожаловать в это  🎰 <b>Чёртово Казино</b> 🎰'
     await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
 
 
