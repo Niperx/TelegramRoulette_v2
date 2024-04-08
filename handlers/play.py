@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
 from modules.buttons_list import *
+from modules.chat_type import ChatTypeFilter
 
 bot = Bot(token=TOKEN)
 router = Router()
@@ -17,6 +18,19 @@ router = Router()
 
 class RegComp(StatesGroup):
     betting = State()
+
+
+async def get_logs(text, username='Anonim', name='Anonim'):
+    with open("logs.txt", "r", encoding="utf-8") as read_logs:
+        logs_text = read_logs.read()
+
+    now = datetime.now()
+    now = datetime.strftime(now, '%d.%m %H:%M:%S')
+
+    logs_text += f'## {now} ## @{username} ({name}) {text}\n'
+
+    with open("logs.txt", "w", encoding="utf-8") as write_logs:
+        write_logs.write(logs_text)
 
 
 async def get_info_about_user_message(message):  # Инфа о сообщении в консоль
@@ -45,13 +59,13 @@ async def get_info_about_user_callback(callback):  # Инфа о коллбек�
     return text
 
 
-@router.message(F.text == '🟥 Red')
-@router.message(F.text == '🟩 Green')
-@router.message(F.text == '⬛️ Black')
+@router.message(ChatTypeFilter(chat_type=["private"]), F.text == '🟥 Red')
+@router.message(ChatTypeFilter(chat_type=["private"]), F.text == '🟩 Green')
+@router.message(ChatTypeFilter(chat_type=["private"]), F.text == '⬛️ Black')
 async def cmd_choose_color(message: types.Message, state: FSMContext):
     print(await get_info_about_user_message(message))
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
-
+    balance = await get_balance(message.from_user.id)
     await state.update_data(color=message.text)
     data = await state.get_data()
     print(data)
@@ -66,10 +80,18 @@ async def cmd_choose_color(message: types.Message, state: FSMContext):
         last = 1000
         await state.update_data(last=last)
 
-    a = await message.answer(f'Ставка на Цвет: {message.text}\n'
-                             f'<i>(Сумма в центре клавиатуры, либо напишите её сообщением)</i>',
-                             reply_markup=get_bet_kb(last), parse_mode='HTML')
-    await state.update_data(message=a)
+    if last <= balance:
+        last = int(balance)
+        await state.update_data(last=last)
+
+    if balance > 0:
+        a = await message.answer(f'Ставка на Цвет: {message.text}\n'
+                                 f'<i>(Сумма в центре клавиатуры, либо напишите её сообщением)</i>',
+                                 reply_markup=get_bet_kb(last), parse_mode='HTML')
+        await state.update_data(message=a)
+    else:
+        await message.answer(f'У вас недостаточно средств на балансе 😢',
+                             reply_markup=get_menu_kb(), parse_mode='HTML')
 
 
 @router.callback_query(F.data == 'bet_no')
@@ -84,6 +106,7 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     print(await get_info_about_user_callback(callback))
     await bot.send_chat_action(chat_id=callback.message.chat.id, action='typing')
 
+    balance = await get_balance(callback.from_user.id)
     username = await get_username(callback.from_user.id)
     data = await state.get_data()
     last = data['last']
@@ -92,13 +115,16 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(callback.message.text)
 
     roll = random.randint(0, 14)
-    roll_pic = "✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️\n⬛️🟥⬛️🟥⬛️🟥🟩🟥⬛️🟥⬛️🟥⬛️🟥⬛️\n"
+    roll_pic_raw = "✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️\n⬛️🟥⬛️🟥⬛️🟥🟩🟥⬛️🟥⬛️🟥⬛️🟥⬛️\n"
 
     roll_start = "🎰 Крутим рулетку 🎰\n\n"
-    roll_pic = roll_pic[:roll * 2] + '🎲' + roll_pic[roll * 2 + 1:]
-    text = roll_start + roll_pic
+    roll_pic = roll_pic_raw[:roll * 2] + '🎲' + roll_pic_raw[roll * 2 + 1:]
+    text = roll_start + roll_pic_raw
 
     a = await callback.message.answer(text)
+    await asyncio.sleep(0.5)
+    text = roll_start + roll_pic
+    await a.edit_text(text)
 
     bet_color = None
     if roll == 6:
@@ -125,16 +151,20 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
             else:
                 x = 2
             text += f'Вы выиграли {last * x} коинов'
+            log_text = f'Выиграл {last * x} коинов'
 
             await add_money(callback.from_user.id, last * x)
             await a.edit_text(text)
             await state.update_data(message=None)
         else:
             text += f'Вы проиграли {last} коинов'
+            log_text = f'Проиграл {last} коинов'
 
             await add_money(callback.from_user.id, -last)
             await a.edit_text(text)
             await state.update_data(message=None)
+
+        await get_logs(f'Сделал ставку на {color}. Выпало {bet_color}. {log_text}', callback.from_user.username, callback.from_user.first_name)
     else:
         await a.edit_text('❌ <b>Ставка отменена</b> ❌ \n(Защита от спама)', parse_mode='HTML')
 
@@ -188,23 +218,23 @@ async def process_edit_bet(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(message=a)
 
 
-@router.message(F.text)
-async def cmd_choose_color(message: types.Message, state: FSMContext):
-    print(await get_info_about_user_message(message))
-    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
-
-    balance = await get_balance(message.from_user.id)
-    data = await state.get_data()
-
-    if 'color' in data.keys():
-        if data['color'] is not None:
-            if message.text.isdigit():
-                bet = int(message.text)
-                if bet <= balance:
-                    await state.update_data(last=bet)
-                    my_message = data['message']
-                    text = (f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её '
-                            f'сообщением)</i>')
-                    await my_message.edit_text(text, reply_markup=get_bet_kb(bet), parse_mode='HTML')
-
-    await message.delete()
+# @router.message(ChatTypeFilter(chat_type=["private"]), F.text)
+# async def cmd_choose_color(message: types.Message, state: FSMContext):
+#     print(await get_info_about_user_message(message))
+#     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
+#
+#     balance = await get_balance(message.from_user.id)
+#     data = await state.get_data()
+#
+#     if 'color' in data.keys():
+#         if data['color'] is not None:
+#             if message.text.isdigit():
+#                 bet = int(message.text)
+#                 if bet <= balance:
+#                     await state.update_data(last=bet)
+#                     my_message = data['message']
+#                     text = (f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её '
+#                             f'сообщением)</i>')
+#                     await my_message.edit_text(text, reply_markup=get_bet_kb(bet), parse_mode='HTML')
+#
+#     await message.delete()
