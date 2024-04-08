@@ -117,12 +117,12 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
             x = 13
         else:
             x = 2
-        text += f'Вы выиграли {last * x}'
+        text += f'Вы выиграли {last * x} коинов'
 
         await add_money(callback.from_user.id, last * x)
         await a.edit_text(text)
     else:
-        text += f'Вы проиграли {last}'
+        text += f'Вы проиграли {last} коинов'
 
         await add_money(callback.from_user.id, -last)
         await a.edit_text(text)
