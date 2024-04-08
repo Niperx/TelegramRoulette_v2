@@ -101,7 +101,7 @@ async def cmd_check_balance(message: types.Message):
     user_id = message.from_user.id
     balance = await get_balance(user_id)
     text = (f'🪙 <b>Ваш баланс:</b> 🪙\n'
-            f'{balance}')
+            f'{int(balance)}')
     await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
     await get_logs(f'проверил свой баланс на сумму {int(balance)} коинов', message.from_user.username, message.from_user.first_name)
 

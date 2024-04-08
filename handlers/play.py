@@ -80,8 +80,8 @@ async def cmd_choose_color(message: types.Message, state: FSMContext):
         last = 1000
         await state.update_data(last=last)
 
-    if last <= balance:
-        last = int(balance) / 10
+    if last >= balance:
+        last = int(int(balance) / 10)
         await state.update_data(last=last)
 
     if balance > 0:
@@ -145,26 +145,33 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     await asyncio.sleep(1)
 
     if color:
-        if color in bet_color:
-            if 'Green' in bet_color:
-                x = 13
+        if last <= balance:
+            if color in bet_color:
+                if 'Green' in bet_color:
+                    x = 13
+                else:
+                    x = 2
+                text += f'Вы выиграли {last * x - last} коинов'
+                log_text = f'Выиграл {last * x - last} коинов'
+
+                await add_money(callback.from_user.id, last * x - last)
+                await a.edit_text(text)
+                await state.update_data(message=None)
             else:
-                x = 2
-            text += f'Вы выиграли {last * x - last} коинов'
-            log_text = f'Выиграл {last * x - last} коинов'
+                text += f'Вы проиграли {last} коинов'
+                log_text = f'Проиграл {last} коинов'
 
-            await add_money(callback.from_user.id, last * x - last)
-            await a.edit_text(text)
-            await state.update_data(message=None)
+                await add_money(callback.from_user.id, -last)
+                await a.edit_text(text)
+                await state.update_data(message=None)
+
+            await get_logs(f'Сделал ставку на {color}. Выпало {bet_color}. {log_text}', callback.from_user.username,
+                           callback.from_user.first_name)
         else:
-            text += f'Вы проиграли {last} коинов'
-            log_text = f'Проиграл {last} коинов'
-
-            await add_money(callback.from_user.id, -last)
+            text += f'Недостаточно средств на балансе'
             await a.edit_text(text)
             await state.update_data(message=None)
 
-        await get_logs(f'Сделал ставку на {color}. Выпало {bet_color}. {log_text}', callback.from_user.username, callback.from_user.first_name)
     else:
         await a.edit_text('❌ <b>Ставка отменена</b> ❌ \n(Защита от спама)', parse_mode='HTML')
 
@@ -218,23 +225,23 @@ async def process_edit_bet(callback: types.CallbackQuery, state: FSMContext):
         await state.update_data(message=a)
 
 
-# @router.message(ChatTypeFilter(chat_type=["private"]), F.text)
-# async def cmd_choose_color(message: types.Message, state: FSMContext):
-#     print(await get_info_about_user_message(message))
-#     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
-#
-#     balance = await get_balance(message.from_user.id)
-#     data = await state.get_data()
-#
-#     if 'color' in data.keys():
-#         if data['color'] is not None:
-#             if message.text.isdigit():
-#                 bet = int(message.text)
-#                 if bet <= balance:
-#                     await state.update_data(last=bet)
-#                     my_message = data['message']
-#                     text = (f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её '
-#                             f'сообщением)</i>')
-#                     await my_message.edit_text(text, reply_markup=get_bet_kb(bet), parse_mode='HTML')
-#
-#     await message.delete()
+@router.message(ChatTypeFilter(chat_type=["private"]), F.text)
+async def cmd_choose_color(message: types.Message, state: FSMContext):
+    print(await get_info_about_user_message(message))
+    await bot.send_chat_action(chat_id=message.chat.id, action='typing')
+
+    balance = await get_balance(message.from_user.id)
+    data = await state.get_data()
+
+    if 'color' in data.keys():
+        if data['color'] is not None:
+            if message.text.isdigit():
+                bet = int(message.text)
+                if bet <= balance:
+                    await state.update_data(last=bet)
+                    my_message = data['message']
+                    text = (f'Ставка на Цвет: {data["color"]}\n<i>(Сумма в центре клавиатуры, либо напишите её '
+                            f'сообщением)</i>')
+                    await my_message.edit_text(text, reply_markup=get_bet_kb(bet), parse_mode='HTML')
+
+    await message.delete()
