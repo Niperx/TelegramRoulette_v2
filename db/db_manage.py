@@ -60,7 +60,7 @@ async def create_user(user_id, username=None, balance=0, ref_id=None):  # соз
     user_info = (new_id, user_id, username, balance, datetime.now(), ref_id, datetime.now())
     cur.execute("INSERT INTO users VALUES(?,?,?,?,?,?,?);", user_info)
 
-    if not ref_id:
+    if ref_id is not None:
         cur.execute(f'SELECT balance FROM users WHERE user_id = {ref_id}')
         old_balance = cur.fetchall()[0][0]
         new_balance = old_balance + 30000
