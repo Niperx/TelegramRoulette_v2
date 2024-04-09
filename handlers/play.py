@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os.path
 import random
 
 from db.db_manage import *
@@ -21,15 +22,17 @@ class RegComp(StatesGroup):
 
 
 async def get_logs(text, username='Anonim', name='Anonim'):
-    with open("logs.txt", "r", encoding="utf-8") as read_logs:
-        logs_text = read_logs.read()
-
     now = datetime.now()
-    now = datetime.strftime(now, '%d.%m %H:%M:%S')
+    now_file = datetime.strftime(now, '%d_%m')
+    now_info = datetime.strftime(now, '%d.%m %H:%M:%S')
+    logs_text = ''
+    if os.path.isfile(f"logs/logs_{now_file}.txt"):
+        with open(f"logs/logs_{now_file}.txt", "r", encoding="utf-8") as read_logs:
+            logs_text = read_logs.read()
 
-    logs_text += f'## {now} ## @{username} ({name}) {text}\n'
+    logs_text = logs_text + f'## {now_info} ## @{username} ({name}) {text}\n'
 
-    with open("logs.txt", "w", encoding="utf-8") as write_logs:
+    with open(f"logs/logs_{now_file}.txt", "w", encoding="utf-8") as write_logs:
         write_logs.write(logs_text)
 
 

@@ -1,7 +1,7 @@
 # coding=utf-8
 import asyncio
 import logging
-
+import os.path
 import aiogram.types
 
 from db.db_manage import *
@@ -20,15 +20,17 @@ router = Router()
 
 
 async def get_logs(text, username='Anonim', name='Anonim'):
-    with open("logs.txt", "r", encoding="utf-8") as read_logs:
-        logs_text = read_logs.read()
-
     now = datetime.now()
-    now = datetime.strftime(now, '%d.%m %H:%M:%S')
+    now_file = datetime.strftime(now, '%d_%m')
+    now_info = datetime.strftime(now, '%d.%m %H:%M:%S')
+    logs_text = ''
+    if os.path.isfile(f"logs/logs_{now_file}.txt"):
+        with open(f"logs/logs_{now_file}.txt", "r", encoding="utf-8") as read_logs:
+            logs_text = read_logs.read()
 
-    logs_text += f'## {now} ## @{username} ({name}) {text}\n'
+    logs_text = logs_text + f'## {now_info} ## @{username} ({name}) {text}\n'
 
-    with open("logs.txt", "w", encoding="utf-8") as write_logs:
+    with open(f"logs/logs_{now_file}.txt", "w", encoding="utf-8") as write_logs:
         write_logs.write(logs_text)
 
 
@@ -103,7 +105,8 @@ async def cmd_check_balance(message: types.Message):
     text = (f'🪙 <b>Ваш баланс:</b> 🪙\n'
             f'{int(balance)}')
     await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
-    await get_logs(f'проверил свой баланс на сумму {int(balance)} коинов', message.from_user.username, message.from_user.first_name)
+    await get_logs(f'проверил свой баланс на сумму {int(balance)} коинов', message.from_user.username,
+                   message.from_user.first_name)
 
 
 @router.message(Command(commands=["leaders"]))
