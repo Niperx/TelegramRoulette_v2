@@ -116,16 +116,17 @@ async def add_money(user_id, money):
     new_balance = old_balance + money
     cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {user_id}')
 
-    # Пополнение у реферала
-    cur.execute(f'SELECT ref_id FROM users WHERE user_id = {user_id}')
+    if money > 0:
+        # Пополнение у реферала
+        cur.execute(f'SELECT ref_id FROM users WHERE user_id = {user_id}')
 
-    ref = cur.fetchall()[0][0]
+        ref = cur.fetchall()[0][0]
 
-    if ref:
-        cur.execute(f'SELECT balance FROM users WHERE user_id = {ref}')
-        old_balance = cur.fetchall()[0][0]
-        new_balance = old_balance + money * 0.05
-        cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref}')
+        if ref:
+            cur.execute(f'SELECT balance FROM users WHERE user_id = {ref}')
+            old_balance = cur.fetchall()[0][0]
+            new_balance = old_balance + money * 0.05
+            cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref}')
 
     con.commit()
     con.close()
