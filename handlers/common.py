@@ -150,8 +150,8 @@ async def cmd_get_daily(message: types.Message):
 
     time_left = await check_money_time(user_id)
 
-    if time_left // 3600 <= 23:
-        end = 3600 * 24 - time_left
+    if time_left // 3600 <= 11:
+        end = 3600 * 12 - time_left
         end_h = int(end // 3600)
         end_m = int(end % 3600 / 60)
         text = f'🪙 До бесплатных монеток осталось: 🪙 \n<b>{end_h}ч. {end_m}м.</b>'
@@ -161,7 +161,7 @@ async def cmd_get_daily(message: types.Message):
         await add_money(user_id, money)
         await update_money_time(user_id)
         text = (f'🪙 Вам начислено 10000 монеток 🪙\n'
-                f'Приходите за новой порцией через <b>24ч.</b>')
+                f'Приходите за новой порцией через <b>12ч.</b>')
         log_text = f'получил дневную норму {money}'
 
     await message.answer(text, reply_markup=get_menu_kb(), parse_mode='HTML')
