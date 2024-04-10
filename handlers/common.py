@@ -136,7 +136,7 @@ async def cmd_check_leaders(message: types.Message):
         if message.from_user.username == top[0]:
             you_mark = '(You)'
 
-        lead_text += f'{smile} {i}. @{top[0]} - {int(top[1])} коинов. {smile} {you_mark}\n'
+        lead_text += f'{smile} {i}. @{top[0]} - {int(top[1])} коинов. {you_mark}\n'
 
     await message.answer(lead_text, reply_markup=get_menu_kb(), parse_mode='HTML')
     await get_logs(f'посмотрел список лидеров', message.from_user.username, message.from_user.first_name)
