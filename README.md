@@ -6,5 +6,5 @@ Contains the following functions:
 * Balance
 * Leaderboard
 
-<br>
+
 *P.S. The project was rewritten 5 years later for self-interest*
