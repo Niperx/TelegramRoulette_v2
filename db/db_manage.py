@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from settings import *
 
 
 async def check_db():  # Проверка на ДБ, при отсутствии - создание
@@ -63,7 +64,7 @@ async def create_user(user_id, username=None, balance=0, ref_id=None):  # соз
     if ref_id is not None:
         cur.execute(f'SELECT balance FROM users WHERE user_id = {ref_id}')
         old_balance = cur.fetchall()[0][0]
-        new_balance = old_balance + 30000
+        new_balance = old_balance + REF_INV_BONUS
         cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref_id}')
 
     con.commit()
@@ -116,7 +117,7 @@ async def add_money(user_id, money):
     new_balance = old_balance + money
     cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {user_id}')
 
-    if money > 0:
+    if money > 0 and REF_MODE:
         # Пополнение у реферала
         cur.execute(f'SELECT ref_id FROM users WHERE user_id = {user_id}')
 
@@ -125,7 +126,7 @@ async def add_money(user_id, money):
         if ref:
             cur.execute(f'SELECT balance FROM users WHERE user_id = {ref}')
             old_balance = cur.fetchall()[0][0]
-            new_balance = old_balance + int(money * 0.05)
+            new_balance = old_balance + int(money * (REF_PERC / 100))
             cur.execute(F'UPDATE users SET balance = {new_balance} WHERE user_id = {ref}')
 
     con.commit()

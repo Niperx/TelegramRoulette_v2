@@ -4,13 +4,13 @@ import logging
 import os.path
 import aiogram.types
 
-from db.db_manage import *
-from config import TOKEN
-from datetime import datetime
 from aiogram import Bot, types, Router, F
 from aiogram.filters.command import Command
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.utils.deep_linking import create_start_link
+
+from db.db_manage import *
+from config import TOKEN
 
 from modules.buttons_list import *
 from modules.chat_type import ChatTypeFilter
@@ -71,7 +71,7 @@ async def cmd_start(message: types.Message, command: CommandObject):
     user_id = message.from_user.id
     chk = await check_user_id(user_id)
     if not chk:
-        balance = 10000
+        balance = START_BONUS
         code = command.args
         if code is not None and code.isdigit() and code != message.from_user.id:
             chk_ref = await check_user_id(int(code))
@@ -79,7 +79,7 @@ async def cmd_start(message: types.Message, command: CommandObject):
                 code = None
             else:
                 code = int(code)
-                balance += 40000
+                balance += REF_INV_BONUS
                 if message.from_user.username is not None:
                     await bot.send_message(chat_id=code,
                                            text=f'У вас новый реферал {message.from_user.first_name}'
@@ -115,8 +115,8 @@ async def cmd_check_leaders(message: types.Message):
     print(await get_info_about_user_message(message))
     await bot.send_chat_action(chat_id=message.chat.id, action='typing')
 
-    lead_text = "⭐️ <b>ТОП-10 богатейших людей этого чёртово казино!</b> ⭐️️ \n\n"
-    tops_db = await get_leaders(10)
+    lead_text = f"⭐️ <b>ТОП-{LEADERS_LIST} богатейших людей этого чёртово казино!</b> ⭐️️ \n\n"
+    tops_db = await get_leaders(LEADERS_LIST)
 
     i = 0
     for top in tops_db:
@@ -150,14 +150,14 @@ async def cmd_get_daily(message: types.Message):
 
     time_left = await check_money_time(user_id)
 
-    if time_left // 3600 <= 11:
-        end = 3600 * 12 - time_left
+    if time_left // 3600 <= DAILY_TIME - 1:
+        end = 3600 * DAILY_TIME - time_left
         end_h = int(end // 3600)
         end_m = int(end % 3600 / 60)
         text = f'🪙 До бесплатных монеток осталось: 🪙 \n<b>{end_h}ч. {end_m}м.</b>'
         log_text = f'проверил оставшееся время до получения дневной нормы'
     else:
-        money = 10000
+        money = DAILY_BONUS
         await add_money(user_id, money)
         await update_money_time(user_id)
         text = (f'🪙 Вам начислено 10000 монеток 🪙\n'
