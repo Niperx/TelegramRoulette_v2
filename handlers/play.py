@@ -117,33 +117,41 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
 
     await callback.message.edit_text(callback.message.text)
 
-    roll = random.randint(0, 14)
-    roll_pic_raw = "✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️✖️\n⬛️🟥⬛️🟥⬛️🟥🟩🟥⬛️🟥⬛️🟥⬛️🟥⬛️\n"
+    roll = random.randint(0, 36)
+    roll_pic_raw = "✖️✖️✖️\n🟥🟩⬛️"
+    roll_colors = '\n🟥🟩⬛️'
 
-    roll_start = "🎰 Крутим рулетку 🎰\n\n"
-    roll_pic = roll_pic_raw[:roll * 2] + '🎲' + roll_pic_raw[roll * 2 + 1:]
-    text = roll_start + roll_pic_raw
+    roll_start_text = "🎰 Крутим рулетку 🎰\n\n"
+    # roll_pic = roll_pic_raw[:roll * 2] + '🎲' + roll_pic_raw[roll * 2 + 1:]
+    text = roll_start_text + roll_pic_raw
 
     a = await callback.message.answer(text)
     await asyncio.sleep(0.5)
-    text = roll_start + roll_pic
-    await a.edit_text(text)
+    # text = roll_start + roll_pic
+    # await a.edit_text(text)
 
+    bet_pic = '✖️✖️✖️'
     bet_color = None
-    if roll == 6:
+    if roll == 0:
         # green
         bet_color = '🟩 Green 🟩'
+        bet_pic = '✖️🎲✖️'
         await change_stats('green')
     elif roll % 2 == 0:
         # black
         bet_color = '⬛️ Black ⬛️'
+        bet_pic = '✖️✖️🎲'
         await change_stats('black')
     elif roll % 2 == 1:
         # red
         bet_color = '🟥 Red 🟥'
+        bet_pic = '🎲✖️✖️'
         await change_stats('red')
 
-    text += f"\nНа барабане следующий цвет:\n{bet_color}️\n\n@{username}, "
+    text = roll_start_text + bet_pic + roll_colors
+    await a.edit_text(text)
+
+    text += f"\n\nНа барабане следующий цвет:\n{bet_color}️\n\n@{username}, "
 
     await asyncio.sleep(1)
 
@@ -151,7 +159,7 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
         if last <= balance:
             if color in bet_color:
                 if 'Green' in bet_color:
-                    x = 13
+                    x = 35
                 else:
                     x = 2
                 text += f'Вы выиграли {last * x - last} коинов'
