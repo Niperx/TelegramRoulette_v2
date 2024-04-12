@@ -118,17 +118,14 @@ async def process_confirm_bet(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(callback.message.text)
 
     roll = random.randint(0, 36)
-    roll_pic_raw = "✖️✖️✖️\n🟥🟩⬛️"
+    roll_pic = "✖️✖️✖️\n🟥🟩⬛️"
     roll_colors = '\n🟥🟩⬛️'
 
     roll_start_text = "🎰 Крутим рулетку 🎰\n\n"
-    # roll_pic = roll_pic_raw[:roll * 2] + '🎲' + roll_pic_raw[roll * 2 + 1:]
-    text = roll_start_text + roll_pic_raw
+    text = roll_start_text + roll_pic
 
     a = await callback.message.answer(text)
     await asyncio.sleep(0.5)
-    # text = roll_start + roll_pic
-    # await a.edit_text(text)
 
     bet_pic = '✖️✖️✖️'
     bet_color = None
