@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, Router, types
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from modules.commands_list import CMD_LIST
-from handlers import common, play
+from handlers import common, play, web
 from db.db_manage import check_db
 
 bot = Bot(token=config.TOKEN)
@@ -34,6 +34,7 @@ async def main():
     logger.info("Starting bot")
 
     dp.include_routers(
+        web.router,
         common.router,
         play.router
     )

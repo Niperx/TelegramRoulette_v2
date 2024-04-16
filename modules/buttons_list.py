@@ -1,9 +1,6 @@
-from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, WebAppInfo
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
-
-# def get_menu_kb():
-#
 
 def get_menu_kb() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
@@ -31,6 +28,17 @@ def get_cancel_kb() -> ReplyKeyboardMarkup:
     kb.adjust(1)
 
     return kb.as_markup(resize_keyboard=True, input_field_placeholder="Что делаем?")
+
+
+def get_webapp_kb():
+    buttons = [
+        [
+            InlineKeyboardButton(text='Click!', web_app=WebAppInfo(url='https://dfd3-188-113-174-160.ngrok-free.app')),
+        ]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    return keyboard
 
 
 def get_bet_kb(last=None):
